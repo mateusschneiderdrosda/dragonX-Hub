@@ -1,789 +1,142 @@
--- DragonXT Hub — Premium GUI para Blox Fruits
--- Coloque este LocalScript em StarterPlayerScripts ou StarterGui
+-- DragonXT Hub v2 — GUI Premium
+-- LocalScript em StarterPlayerScripts ou StarterGui
 
-local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
 
--- =========================
--- Config de estilo
--- =========================
-local Colors = {
-    bg1 = Color3.fromRGB(10, 12, 18),      -- fundo base
-    bg2 = Color3.fromRGB(18, 20, 28),      -- painéis
-    accentPurple = Color3.fromRGB(122, 62, 240),
-    accentBlue = Color3.fromRGB(0, 212, 255),
-    accentEmerald = Color3.fromRGB(46, 229, 157),
-    accentGold = Color3.fromRGB(245, 197, 66),
-    textPrimary = Color3.fromRGB(230, 235, 255),
-    textMuted = Color3.fromRGB(160, 170, 190),
-    danger = Color3.fromRGB(255, 80, 80),
-}
-
-local CornerRadius = 12
-local ShadowTransparency = 0.6
-
--- =========================
--- Helpers
--- =========================
-local function mk(tag, props, parent)
-    local inst = Instance.new(tag)
-    for k, v in pairs(props or {}) do
-        inst[k] = v
-    end
-    if parent then inst.Parent = parent end
-    return inst
-end
-
-local function roundify(guiObject, radius)
-    local c = mk("UICorner", {CornerRadius = UDim.new(0, radius or CornerRadius)}, guiObject)
-    return c
-end
-
-local function softShadow(parent, sizeScale)
-    local shadow = mk("ImageLabel", {
-        Name = "SoftShadow",
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://1316045217", -- blur circle
-        ImageColor3 = Color3.fromRGB(0,0,0),
-        ImageTransparency = ShadowTransparency,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(10,10,118,118),
-        Size = UDim2.new(1, 20, 1, 20),
-        Position = UDim2.new(0, -10, 0, -10),
-        ZIndex = (parent.ZIndex or 1) - 1
-    }, parent)
-    return shadow
-end
-
-local function glowStroke(parent, color, thickness)
-    local uiStroke = mk("UIStroke", {
-        Color = color,
-        Thickness = thickness or 1.5,
-        Transparency = 0.35,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    }, parent)
-    return uiStroke
-end
-
+-- Função de tween
 local function tween(obj, info, goal)
-    return TweenService:Create(obj, info, goal):Play()
+    TweenService:Create(obj, info, goal):Play()
 end
 
--- =========================
--- ScreenGui + fundo
--- =========================
-local screen = mk("ScreenGui", {Name = "DragonXT_Hub", ResetOnSpawn = false}, player:WaitForChild("PlayerGui"))
+-- ScreenGui
+local gui = Instance.new("ScreenGui", player.PlayerGui)
+gui.Name = "DragonXT_Hub"
+gui.ResetOnSpawn = false
 
--- Fundo com gradiente e partículas
-local backdrop = mk("Frame", {
-    Name = "Backdrop",
-    BackgroundColor3 = Colors.bg1,
-    Size = UDim2.new(1,0,1,0),
-}, screen)
+-- Janela principal
+local window = Instance.new("Frame", gui)
+window.Size = UDim2.new(0, 900, 0, 540)
+window.Position = UDim2.new(0.5, -450, 0.5, -270)
+window.BackgroundColor3 = Color3.fromRGB(18,20,28)
+window.BorderSizePixel = 0
+Instance.new("UICorner", window).CornerRadius = UDim.new(0,18)
 
-local gradient = mk("UIGradient", {
-    Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(8,10,16)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14,16,24)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(6,8,14)),
-    }),
-    Rotation = 45
-}, backdrop)
-
--- Partículas místicas sutis
-local particles = mk("ImageLabel", {
-    BackgroundTransparency = 1,
-    Image = "rbxassetid://64291961", -- partículas suaves
-    ImageColor3 = Colors.accentBlue,
-    ImageTransparency = 0.92,
-    Size = UDim2.new(1,0,1,0),
-    ZIndex = 0
-}, backdrop)
-
--- leve movimento das partículas
-RunService.RenderStepped:Connect(function(dt)
-    particles.Position = UDim2.new(0, math.sin(tick()*0.2)*10, 0, math.cos(tick()*0.15)*10)
-end)
-
--- =========================
--- Janela central flutuante
--- =========================
-local window = mk("Frame", {
-    Name = "Window",
-    BackgroundColor3 = Colors.bg2,
-    Size = UDim2.new(0, 900, 0, 540),
-    Position = UDim2.new(0.5, -450, 0.5, -270),
-    BorderSizePixel = 0
-}, screen)
-roundify(window, 18)
-softShadow(window)
-
--- Draggable
-local dragBar = mk("Frame", {
-    BackgroundTransparency = 1,
-    Size = UDim2.new(1,0,0,40),
-    Position = UDim2.new(0,0,0,0),
-    ZIndex = 3
-}, window)
-
-local dragging, dragStart, startPos
-dragBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = window.Position
-    end
-end)
-dragBar.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
--- =========================
 -- Header
--- =========================
-local header = mk("Frame", {
-    Name = "Header",
-    BackgroundColor3 = Colors.bg2,
-    Size = UDim2.new(1,0,0,64),
-    BorderSizePixel = 0
-}, window)
-roundify(header, 18)
-glowStroke(header, Colors.accentPurple, 1)
+local header = Instance.new("Frame", window)
+header.Size = UDim2.new(1,0,0,64)
+header.BackgroundColor3 = Color3.fromRGB(24,26,36)
+Instance.new("UICorner", header).CornerRadius = UDim.new(0,18)
 
-local icon = mk("ImageLabel", {
-    BackgroundTransparency = 1,
-    Image = "rbxassetid://10921043743", -- ícone dragão/fruta mística (exemplo)
-    ImageColor3 = Colors.accentGold,
-    Size = UDim2.new(0, 40, 0, 40),
-    Position = UDim2.new(0, 16, 0, 12)
-}, header)
+local title = Instance.new("TextLabel", header)
+title.Text = "DragonXT Hub"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.TextColor3 = Color3.fromRGB(230,235,255)
+title.Position = UDim2.new(0,68,0,10)
+title.Size = UDim2.new(0,300,0,24)
 
-local title = mk("TextLabel", {
-    BackgroundTransparency = 1,
-    Text = "DragonXT Hub",
-    Font = Enum.Font.GothamBold,
-    TextSize = 22,
-    TextColor3 = Colors.textPrimary,
-    Position = UDim2.new(0, 68, 0, 10),
-    Size = UDim2.new(0, 300, 0, 24),
-    TextXAlignment = Enum.TextXAlignment.Left
-}, header)
-
-local subtitle = mk("TextLabel", {
-    BackgroundTransparency = 1,
-    Text = "Blox Fruits | Premium Edition",
-    Font = Enum.Font.Gotham,
-    TextSize = 14,
-    TextColor3 = Colors.textMuted,
-    Position = UDim2.new(0, 68, 0, 34),
-    Size = UDim2.new(0, 300, 0, 20),
-    TextXAlignment = Enum.TextXAlignment.Left
-}, header)
+local subtitle = Instance.new("TextLabel", header)
+subtitle.Text = "Blox Fruits | Premium Edition"
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 14
+subtitle.TextColor3 = Color3.fromRGB(160,170,190)
+subtitle.Position = UDim2.new(0,68,0,34)
+subtitle.Size = UDim2.new(0,300,0,20)
 
 -- Botões minimizar/fechar
-local closeBtn = mk("TextButton", {
-    Text = "✕",
-    Font = Enum.Font.GothamBold,
-    TextSize = 16,
-    TextColor3 = Colors.textPrimary,
-    BackgroundColor3 = Colors.bg2,
-    Size = UDim2.new(0, 32, 0, 32),
-    Position = UDim2.new(1, -40, 0, 16)
-}, header)
-roundify(closeBtn, 10)
-glowStroke(closeBtn, Colors.danger, 1)
+local minimized = false
+local minBtn = Instance.new("TextButton", header)
+minBtn.Text = "—"
+minBtn.Size = UDim2.new(0,32,0,32)
+minBtn.Position = UDim2.new(1,-80,0,16)
+minBtn.BackgroundColor3 = Color3.fromRGB(18,20,28)
+Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0,10)
 
-local minBtn = mk("TextButton", {
-    Text = "—",
-    Font = Enum.Font.GothamBold,
-    TextSize = 16,
-    TextColor3 = Colors.textPrimary,
-    BackgroundColor3 = Colors.bg2,
-    Size = UDim2.new(0, 32, 0, 32),
-    Position = UDim2.new(1, -80, 0, 16)
-}, header)
-roundify(minBtn, 10)
-glowStroke(minBtn, Colors.accentBlue, 1)
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Text = "✕"
+closeBtn.Size = UDim2.new(0,32,0,32)
+closeBtn.Position = UDim2.new(1,-40,0,16)
+closeBtn.BackgroundColor3 = Color3.fromRGB(18,20,28)
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,10)
 
--- Interações header
-local hoverInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-minBtn.MouseEnter:Connect(function() tween(minBtn, hoverInfo, {BackgroundColor3 = Colors.accentBlue}) end)
-minBtn.MouseLeave:Connect(function() tween(minBtn, hoverInfo, {BackgroundColor3 = Colors.bg2}) end)
-closeBtn.MouseEnter:Connect(function() tween(closeBtn, hoverInfo, {BackgroundColor3 = Colors.danger}) end)
-closeBtn.MouseLeave:Connect(function() tween(closeBtn, hoverInfo, {BackgroundColor3 = Colors.bg2}) end)
-
+-- Minimizar corrigido
 minBtn.MouseButton1Click:Connect(function()
-    tween(window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 900, 0, 40)})
-end)
-closeBtn.MouseButton1Click:Connect(function()
-    tween(window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1})
-    tween(backdrop, TweenInfo.new(0.2), {BackgroundTransparency = 1})
-    task.delay(0.22, function() screen:Destroy() end)
+    minimized = not minimized
+    if minimized then
+        for _, child in ipairs(window:GetChildren()) do
+            if child ~= header then child.Visible = false end
+        end
+        tween(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0,900,0,64)
+        })
+    else
+        for _, child in ipairs(window:GetChildren()) do
+            child.Visible = true
+        end
+        tween(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0,900,0,540)
+        })
+    end
 end)
 
--- =========================
--- Sidebar (categorias)
--- =========================
-local sidebar = mk("Frame", {
-    Name = "Sidebar",
-    BackgroundColor3 = Colors.bg2,
-    Size = UDim2.new(0, 200, 1, -64),
-    Position = UDim2.new(0, 0, 0, 64),
-    BorderSizePixel = 0
-}, window)
-roundify(sidebar, 18)
-softShadow(sidebar)
+closeBtn.MouseButton1Click:Connect(function()
+    tween(window, TweenInfo.new(0.25), {BackgroundTransparency = 1})
+    task.wait(0.25)
+    gui:Destroy()
+end)
+
+-- Sidebar
+local sidebar = Instance.new("Frame", window)
+sidebar.Size = UDim2.new(0,200,1,-64)
+sidebar.Position = UDim2.new(0,0,0,64)
+sidebar.BackgroundColor3 = Color3.fromRGB(24,26,36)
+Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0,18)
 
 local categories = {"Main","Farm","Combat","Fruits","Items","Teleport","Store / Shop","Settings"}
-
-local list = mk("UIListLayout", {
-    Padding = UDim.new(0, 8),
-    SortOrder = Enum.SortOrder.LayoutOrder
-}, sidebar)
-mk("UIPadding", {PaddingTop = UDim.new(0, 12), PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12)}, sidebar)
-
 local activeCategory = "Main"
-local buttons = {}
 
-local function setActiveCategory(cat)
-    activeCategory = cat
-    for name, btn in pairs(buttons) do
-        local isActive = (name == cat)
-        tween(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            BackgroundColor3 = isActive and Colors.accentPurple or Colors.bg2
-        })
-        btn.Icon.ImageColor3 = isActive and Colors.accentGold or Colors.textMuted
-        btn.Label.TextColor3 = isActive and Colors.textPrimary or Colors.textMuted
-        btn.Glow.Enabled = isActive
-    end
-end
-
-local function createSidebarButton(cat, iconId)
-    local btn = mk("Frame", {
-        Name = cat,
-        BackgroundColor3 = Colors.bg2,
-        Size = UDim2.new(1, -24, 0, 44),
-        BorderSizePixel = 0
-    }, sidebar)
-    roundify(btn, 12)
-    softShadow(btn)
-
-    local glow = glowStroke(btn, Colors.accentPurple, 2)
-    glow.Enabled = false
-    btn.Glow = glow
-
-    local icon = mk("ImageLabel", {
-        Name = "Icon",
-        BackgroundTransparency = 1,
-        Image = iconId or "rbxassetid://10921043743",
-        ImageColor3 = Colors.textMuted,
-        Size = UDim2.new(0, 24, 0, 24),
-        Position = UDim2.new(0, 10, 0, 10)
-    }, btn)
-
-    local label = mk("TextLabel", {
-        Name = "Label",
-        BackgroundTransparency = 1,
-        Text = cat,
-        Font = Enum.Font.Gotham,
-        TextSize = 16,
-        TextColor3 = Colors.textMuted,
-        Position = UDim2.new(0, 44, 0, 10),
-        Size = UDim2.new(1, -54, 0, 24),
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, btn)
-
-    btn.Label = label
-    btn.Icon = icon
-
-    local hoverInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    btn.MouseEnter:Connect(function()
-        tween(btn, hoverInfo, {BackgroundColor3 = Colors.bg2:Lerp(Colors.accentBlue, 0.15)})
-        btn.Icon.Size = UDim2.new(0, 26, 0, 26)
-    end)
-    btn.MouseLeave:Connect(function()
-        local isActive = (activeCategory == cat)
-        tween(btn, hoverInfo, {BackgroundColor3 = isActive and Colors.accentPurple or Colors.bg2})
-        btn.Icon.Size = UDim2.new(0, 24, 0, 24)
-    end)
-
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            setActiveCategory(cat)
-            -- Troca de conteúdo
-            for _, panel in ipairs(contentHolder:GetChildren()) do
-                if panel:IsA("Frame") then
-                    panel.Visible = (panel.Name == cat)
-                    if panel.Visible then
-                        panel.BackgroundTransparency = 1
-                        tween(panel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
-                    end
-                end
-            end
-        end
-    end)
-
-    buttons[cat] = btn
-end
-
--- =========================
 -- Área de conteúdo
--- =========================
-local contentHolder = mk("Frame", {
-    Name = "ContentHolder",
-    BackgroundTransparency = 1,
-    Size = UDim2.new(1, -220, 1, -84),
-    Position = UDim2.new(0, 210, 0, 74)
-}, window)
+local content = Instance.new("Frame", window)
+content.Size = UDim2.new(1,-220,1,-84)
+content.Position = UDim2.new(0,210,0,74)
+content.BackgroundTransparency = 1
 
-local function createPanel(name)
-    local panel = mk("Frame", {
-        Name = name,
-        BackgroundColor3 = Colors.bg2,
-        Size = UDim2.new(1, 0, 1, 0),
-        Visible = false,
-        BorderSizePixel = 0
-    }, contentHolder)
-    roundify(panel, 18)
-    softShadow(panel)
-    mk("UIPadding", {PaddingTop = UDim.new(0, 16), PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16), PaddingBottom = UDim.new(0, 16)}, panel)
-
-    local grid = mk("UIGridLayout", {
-        CellSize = UDim2.new(0, 260, 0, 140),
-        CellPadding = UDim2.new(0, 12, 0, 12),
-        FillDirection = Enum.FillDirection.Horizontal,
-        SortOrder = Enum.SortOrder.LayoutOrder
-    }, panel)
-
-    return panel
-end
-
-local panels = {}
-for _, cat in ipairs(categories) do
-    panels[cat] = createPanel(cat)
-end
-
--- =========================
--- Componentes: Card, Toggle, Slider, Botão
--- =========================
-local function createCard(parent, titleText, subtitleText)
-    local card = mk("Frame", {
-        BackgroundColor3 = Colors.bg2,
-        BorderSizePixel = 0
-    }, parent)
-    roundify(card, 14)
-    softShadow(card)
-    glowStroke(card, Colors.accentEmerald, 1)
-
-    mk("UIPadding", {PaddingTop = UDim.new(0, 12), PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12)}, card)
-
-    local title = mk("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = titleText,
-        Font = Enum.Font.GothamBold,
-        TextSize = 18,
-        TextColor3 = Colors.textPrimary,
-        Size = UDim2.new(1, -24, 0, 24),
-        Position = UDim2.new(0, 0, 0, 0),
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, card)
-
-    local subtitle = mk("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = subtitleText or "",
-        Font = Enum.Font.Gotham,
-        TextSize = 13,
-        TextColor3 = Colors.textMuted,
-        Size = UDim2.new(1, -24, 0, 20),
-        Position = UDim2.new(0, 0, 0, 26),
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, card)
-
-    return card
-end
-
-local function createToggle(parent, labelText, default)
-    local holder = mk("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, -24, 0, 36),
-        Position = UDim2.new(0, 0, 0, 54)
-    }, parent)
-
-    local label = mk("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = labelText,
-        Font = Enum.Font.Gotham,
-        TextSize = 16,
-        TextColor3 = Colors.textPrimary,
-        Size = UDim2.new(1, -60, 1, 0),
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, holder)
-
-    local toggle = mk("Frame", {
-        BackgroundColor3 = Colors.bg2,
-        Size = UDim2.new(0, 56, 0, 28),
-        Position = UDim2.new(1, -60, 0.5, -14),
-        BorderSizePixel = 0
-    }, holder)
-    roundify(toggle, 14)
-    glowStroke(toggle, Colors.accentBlue, 1)
-
-    local knob = mk("Frame", {
-        BackgroundColor3 = Colors.textPrimary,
-        Size = UDim2.new(0, 24, 0, 24),
-        Position = UDim2.new(0, 2, 0, 2),
-        BorderSizePixel = 0
-    }, toggle)
-    roundify(knob, 12)
-
-    local state = default or false
-    local function applyState(animated)
-        local goalPos = state and UDim2.new(0, 30, 0, 2) or UDim2.new(0, 2, 0, 2)
-        local goalColor = state and Colors.accentEmerald or Colors.bg2
-        if animated then
-            tween(knob, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = goalPos})
-            tween(toggle, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = goalColor})
-        else
-            knob.Position = goalPos
-            toggle.BackgroundColor3 = goalColor
-        end
+-- Função para trocar categoria
+local function setCategory(cat)
+    activeCategory = cat
+    for _, panel in ipairs(content:GetChildren()) do
+        panel.Visible = (panel.Name == cat)
     end
-    applyState(false)
-
-    toggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            state = not state
-            applyState(true)
-        end
-    end)
-
-    return {
-        Holder = holder,
-        Toggle = toggle,
-        Get = function() return state end,
-        Set = function(v) state = v applyState(true) end
-    }
 end
 
-local function createSlider(parent, labelText, min, max, default, onChanged)
-    local holder = mk("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, -24, 0, 60),
-        Position = UDim2.new(0, 0, 0, 96)
-    }, parent)
-
-    local label = mk("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = labelText,
-        Font = Enum.Font.Gotham,
-        TextSize = 16,
-        TextColor3 = Colors.textPrimary,
-        Size = UDim2.new(1, 0, 0, 20),
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, holder)
-
-    local bar = mk("Frame", {
-        BackgroundColor3 = Colors.bg2,
-        Size = UDim2.new(1, -10, 0, 8),
-        Position = UDim2.new(0, 0, 0, 28),
-        BorderSizePixel = 0
-    }, holder)
-    roundify(bar, 4)
-    glowStroke(bar, Colors.accentPurple, 1)
-
-    local fill = mk("Frame", {
-        BackgroundColor3 = Colors.accentPurple,
-        Size = UDim2.new(0, 0, 1, 0),
-        BorderSizePixel = 0
-    }, bar)
-    roundify(fill, 4)
-
-    local knob = mk("Frame", {
-        BackgroundColor3 = Colors.accentGold,
-        Size = UDim2.new(0, 16, 0, 16),
-        Position = UDim2.new(0, 0, 0.5, -8),
-        BorderSizePixel = 0
-    }, bar)
-    roundify(knob, 8)
-    glowStroke(knob, Colors.accentGold, 1)
-
-    local valueLabel = mk("TextLabel", {
-        BackgroundTransparency = 1,
-        Text = tostring(default or min),
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
-        TextColor3 = Colors.textMuted,
-        Size = UDim2.new(0, 60, 0, 20),
-        Position = UDim2.new(1, -60, 0, 0),
-        TextXAlignment = Enum.TextXAlignment.Right
-    }, holder)
-
-    local value = math.clamp(default or min, min, max)
-    local function updateVisuals(animated)
-        local pct = (value - min) / (max - min)
-        local goalFill = UDim2.new(pct, 0, 1, 0)
-        local goalKnob = UDim2.new(pct, -8, 0.5, -8)
-        valueLabel.Text = tostring(math.floor(value))
-        if animated then
-            tween(fill, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goalFill})
-            tween(knob, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = goalKnob})
-        else
-            fill.Size = goalFill
-            knob.Position = goalKnob
-        end
-    end
-    updateVisuals(false)
-
-    local dragging = false
-    bar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-        end
-    end)
-    bar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local rel = (input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X
-            value = math.clamp(min + rel * (max - min), min, max)
-            updateVisuals(true)
-            if onChanged then onChanged(value) end
-        end
-    end)
-
-    return {
-        Holder = holder,
-        Get = function() return value end,
-        Set = function(v) value = math.clamp(v, min, max) updateVisuals(true) if onChanged then onChanged(value) end end
-    }
-end
-
-local function createActionButton(parent, text, accentColor, callback)
-    local btn = mk("TextButton", {
-        Text = text,
-        Font = Enum.Font.GothamBold,
-        TextSize = 16,
-        TextColor3 = Colors.textPrimary,
-        BackgroundColor3 = Colors.bg2,
-        Size = UDim2.new(0, 220, 0, 36)
-    }, parent)
-    roundify(btn, 10)
-    local stroke = glowStroke(btn, accentColor, 2)
-
-    local hoverInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    btn.MouseEnter:Connect(function()
-        tween(btn, hoverInfo, {BackgroundColor3 = accentColor})
-        btn.TextColor3 = Color3.fromRGB(10,10,10)
-    end)
-    btn.MouseLeave:Connect(function()
-        tween(btn, hoverInfo, {BackgroundColor3 = Colors.bg2})
-        btn.TextColor3 = Colors.textPrimary
-    end)
-    btn.MouseButton1Click:Connect(function()
-        tween(btn, TweenInfo.new(0.08), {Size = UDim2.new(0, 214, 0, 34)})
-        task.delay(0.09, function()
-            tween(btn, TweenInfo.new(0.08), {Size = UDim2.new(0, 220, 0, 36)})
-        end)
-        if callback then callback() end
-    end)
-
-    return btn
-end
-
--- =========================
--- Conteúdo por categoria
--- =========================
-
--- Main
-do
-    local panel = panels["Main"]
-    panel.Visible = true
-
-    local card = createCard(panel, "Status & Controle", "Gerencie funções principais do hub")
-    local tAutoFarm = createToggle(card, "Auto Farm", false)
-    local tAutoQuest = createToggle(card, "Auto Quest", false)
-    tAutoQuest.Holder.Position = UDim2.new(0, 0, 0, 96)
-
-    local wsSlider = createSlider(card, "WalkSpeed", 16, 120, 24, function(v)
-        -- Conecte ao seu script de movimento
-        -- Exemplo: player.Character.Humanoid.WalkSpeed = v
-    end)
-    wsSlider.Holder.Position = UDim2.new(0, 0, 0, 160)
-
-    local jpSlider = createSlider(card, "JumpPower", 50, 200, 75, function(v)
-        -- Exemplo: player.Character.Humanoid.JumpPower = v
-    end)
-    jpSlider.Holder.Position = UDim2.new(0, 0, 0, 224)
-
-    local btnFarm = createActionButton(card, "Iniciar Auto Farm", Colors.accentEmerald, function()
-        tAutoFarm.Set(true)
-        -- Sua lógica de Auto Farm
-    end)
-    btnFarm.Position = UDim2.new(0, 0, 0, 100)
-
-    local btnQuest = createActionButton(card, "Iniciar Auto Quest", Colors.accentBlue, function()
-        tAutoQuest.Set(true)
-        -- Sua lógica de Auto Quest
-    end)
-    btnQuest.Position = UDim2.new(0, 0, 0, 140)
-end
-
--- Farm
-do
-    local panel = panels["Farm"]
-    local card = createCard(panel, "Farm Avançado", "Configurações detalhadas de farm")
-    local tAutoBoss = createToggle(card, "Auto Boss", false)
-    local tAutoChest = createToggle(card, "Auto Chest", false)
-    tAutoChest.Holder.Position = UDim2.new(0, 0, 0, 96)
-
-    local distSlider = createSlider(card, "Distância de Farm", 10, 200, 60, function(v)
-        -- Ajuste de distância de farm
-    end)
-    distSlider.Holder.Position = UDim2.new(0, 0, 0, 160)
-
-    local btnStart = createActionButton(card, "Executar Rotina de Farm", Colors.accentPurple, function()
-        -- Rotina de farm
-    end)
-    btnStart.Position = UDim2.new(0, 0, 0, 100)
-end
-
--- Combat
-do
-    local panel = panels["Combat"]
-    local card = createCard(panel, "Combate", "Assistentes e boosts")
-    local tAimAssist = createToggle(card, "Aim Assist", false)
-    local tAutoSkill = createToggle(card, "Auto Skill", false)
-    tAutoSkill.Holder.Position = UDim2.new(0, 0, 0, 96)
-
-    local btnBurst = createActionButton(card, "Burst Combo", Colors.accentGold, function()
-        -- Lógica de combo
-    end)
-    btnBurst.Position = UDim2.new(0, 0, 0, 100)
-end
-
--- Fruits
-do
-    local panel = panels["Fruits"]
-    local card = createCard(panel, "Frutas Místicas", "Gerenciamento e alertas")
-    local tAutoBuyFruit = createToggle(card, "Auto Buy Fruit", false)
-    local tFruitNotifier = createToggle(card, "Fruit Notifier", true)
-    tFruitNotifier.Holder.Position = UDim2.new(0, 0, 0, 96)
-
-    local btnTrack = createActionButton(card, "Rastrear Frutas", Colors.accentEmerald, function()
-        -- Tracking de frutas
-    end)
-    btnTrack.Position = UDim2.new(0, 0, 0, 100)
-end
-
--- Items
-do
-    local panel = panels["Items"]
-    local card = createCard(panel, "Itens & Loot", "Coleta e organização")
-    local tAutoCollect = createToggle(card, "Auto Collect", true)
-    local btnSort = createActionButton(card, "Organizar Inventário", Colors.accentBlue, function()
-        -- Organização
-    end)
-    btnSort.Position = UDim2.new(0, 0, 0, 100)
-end
-
--- Teleport
-do
-    local panel = panels["Teleport"]
-    local card = createCard(panel, "Teleport", "Locais rápidos")
-    local btnIsland1 = createActionButton(card, "Teleport: Starter Island", Colors.accentPurple, function()
-        -- Teleport
-    end)
-    btnIsland1.Position = UDim2.new(0, 0, 0, 60)
-
-    local btnIsland2 = createActionButton(card, "Teleport: Second Sea", Colors.accentEmerald, function()
-        -- Teleport
-    end)
-    btnIsland2.Position = UDim2.new(0, 0, 0, 100)
-end
-
--- Store / Shop
-do
-    local panel = panels["Store / Shop"]
-    local card = createCard(panel, "Loja Premium", "Boosts e utilitários")
-    local btnBuyBoost = createActionButton(card, "Comprar Boost XP", Colors.accentGold, function()
-        -- Compra
-    end)
-    btnBuyBoost.Position = UDim2.new(0, 0, 0, 60)
-
-    local btnBuyChip = createActionButton(card, "Comprar Raid Chip", Colors.accentBlue, function()
-        -- Compra
-    end)
-    btnBuyChip.Position = UDim2.new(0, 0, 0, 100)
-end
-
--- Settings
-do
-    local panel = panels["Settings"]
-    local card = createCard(panel, "Configurações", "Preferências do usuário")
-    local tParticles = createToggle(card, "Partículas Místicas", true)
-    local tGlow = createToggle(card, "Glow em Botões", true)
-    tGlow.Holder.Position = UDim2.new(0, 0, 0, 96)
-
-    local btnResetUI = createActionButton(card, "Resetar Layout", Colors.danger, function()
-        -- Reset visual
-    end)
-    btnResetUI.Position = UDim2.new(0, 0, 0, 100)
-
-    -- Ativar/desativar partículas
-    local function applyParticles()
-        particles.Visible = tParticles.Get()
-    end
-    applyParticles()
-    tParticles.Toggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            applyParticles()
-        end
-    end)
-end
-
--- =========================
 -- Criar botões da sidebar
--- =========================
 for _, cat in ipairs(categories) do
-    local iconMap = {
-        ["Main"] = "rbxassetid://10921043743",
-        ["Farm"] = "rbxassetid://6034684945",
-        ["Combat"] = "rbxassetid://6034684942",
-        ["Fruits"] = "rbxassetid://6034684948",
-        ["Items"] = "rbxassetid://6034684946",
-        ["Teleport"] = "rbxassetid://6034684947",
-        ["Store / Shop"] = "rbxassetid://6034684944",
-        ["Settings"] = "rbxassetid://6034684943",
-    }
-    createSidebarButton(cat, iconMap[cat])
+    local btn = Instance.new("TextButton", sidebar)
+    btn.Text = cat
+    btn.Size = UDim2.new(1,-24,0,44)
+    btn.BackgroundColor3 = Color3.fromRGB(18,20,28)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
+
+    btn.MouseButton1Click:Connect(function()
+        setCategory(cat)
+        -- animação de destaque
+        tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(122,62,240)})
+    end)
+
+    -- Painel de conteúdo
+    local panel = Instance.new("Frame", content)
+    panel.Name = cat
+    panel.Size = UDim2.new(1,0,1,0)
+    panel.Visible = (cat == "Main")
+    panel.BackgroundColor3 = Color3.fromRGB(24,26,36)
+    Instance.new("UICorner", panel).CornerRadius = UDim.new(0,18)
+
+    -- Exemplo de card
+    local card = Instance.new("TextLabel", panel)
+    card.Text = "Funções de " .. cat
+    card.Size = UDim2.new(0,260,0,140)
+    card.Position = UDim2.new(0,20,0,20)
+    card.BackgroundColor3 = Color3.fromRGB(18,20,28)
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0,14)
 end
-setActiveCategory("Main")
-
--- =========================
--- Transição inicial
--- =========================
-window.BackgroundTransparency = 1
-header.BackgroundTransparency = 1
-sidebar.BackgroundTransparency = 1
-contentHolder.BackgroundTransparency = 1
-
-tween(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
-task.wait(0.05)
-tween(header, TweenInfo.new(0.25), {BackgroundTransparency = 0})
-task.wait(0.05)
-tween(sidebar, TweenInfo.new(0.25), {BackgroundTransparency = 0})
-task.wait(0.05)
-tween(contentHolder, TweenInfo.new(0.25), {BackgroundTransparency = 0})
