@@ -1,0 +1,695 @@
+--[[
+    🐉 DragonXT Hub - GUI AVANÇADA
+    📦 Versão 2.5 - Melhorada por Claude
+    by mateusschneiderdrosda
+]]
+
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+
+-- Remove GUI anterior
+if game.CoreGui:FindFirstChild("DragonXT_Hub_GUI") then
+    game.CoreGui.DragonXT_Hub_GUI:Destroy()
+end
+
+-- ========== CRIAÇÃO DA GUI ==========
+local Window = Instance.new("ScreenGui")
+Window.Name = "DragonXT_Hub_GUI"
+Window.Parent = game.CoreGui
+Window.ResetOnSpawn = false
+Window.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Frame Principal
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 1000, 0, 580)
+Main.Position = UDim2.new(0.5, -500, 0.5, -290)
+Main.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+Main.BackgroundTransparency = 0.03
+Main.Active = true
+Main.Draggable = true
+Main.Parent = Window
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 18)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(70, 170, 255)
+MainStroke.Thickness = 2.5
+MainStroke.Transparency = 0.4
+MainStroke.Parent = Main
+
+-- Sombra
+local Shadow = Instance.new("ImageLabel")
+Shadow.Size = UDim2.new(1, 40, 1, 40)
+Shadow.Position = UDim2.new(0, -20, 0, -20)
+Shadow.BackgroundTransparency = 1
+Shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+Shadow.ImageTransparency = 0.7
+Shadow.ZIndex = 0
+Shadow.Parent = Main
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 60)
+Header.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
+Header.Parent = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 18)
+
+local HeaderGradient = Instance.new("UIGradient")
+HeaderGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 38)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 8, 10))
+}
+HeaderGradient.Rotation = 90
+HeaderGradient.Parent = Header
+
+-- Logo Animado
+local Logo = Instance.new("TextLabel")
+Logo.Size = UDim2.new(0, 55, 0, 55)
+Logo.Position = UDim2.new(0, 8, 0, 2.5)
+Logo.BackgroundTransparency = 1
+Logo.Text = "🐉"
+Logo.TextSize = 36
+Logo.Font = Enum.Font.GothamBold
+Logo.Parent = Header
+
+-- Animação do logo
+spawn(function()
+    while task.wait(2) do
+        TweenService:Create(Logo, TweenInfo.new(0.5, Enum.EasingStyle.Bounce), {
+            Rotation = 15
+        }):Play()
+        wait(0.5)
+        TweenService:Create(Logo, TweenInfo.new(0.5, Enum.EasingStyle.Bounce), {
+            Rotation = -15
+        }):Play()
+        wait(0.5)
+        TweenService:Create(Logo, TweenInfo.new(0.5, Enum.EasingStyle.Bounce), {
+            Rotation = 0
+        }):Play()
+    end
+end)
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -220, 1, -10)
+Title.Position = UDim2.new(0, 70, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "DragonXT Hub"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 28
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local TitleGradient = Instance.new("UIGradient")
+TitleGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 170, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 100, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 120, 255))
+}
+TitleGradient.Parent = Title
+
+-- Animação gradiente
+spawn(function()
+    while task.wait(0.03) do
+        TitleGradient.Rotation = (TitleGradient.Rotation + 1) % 360
+    end
+end)
+
+-- Subtítulo
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Size = UDim2.new(1, -220, 0, 18)
+Subtitle.Position = UDim2.new(0, 70, 0, 35)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "Blox Fruits | Premium Edition v2.5"
+Subtitle.Font = Enum.Font.GothamSemibold
+Subtitle.TextSize = 13
+Subtitle.TextColor3 = Color3.fromRGB(160, 160, 170)
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = Header
+
+-- Info de Status
+local StatusInfo = Instance.new("TextLabel")
+StatusInfo.Size = UDim2.new(0, 200, 0, 25)
+StatusInfo.Position = UDim2.new(1, -330, 0, 10)
+StatusInfo.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+StatusInfo.Text = "👤 " .. LocalPlayer.Name
+StatusInfo.Font = Enum.Font.GothamSemibold
+StatusInfo.TextSize = 12
+StatusInfo.TextColor3 = Color3.fromRGB(120, 200, 255)
+StatusInfo.Parent = Header
+Instance.new("UICorner", StatusInfo).CornerRadius = UDim.new(0, 8)
+
+local StatusStroke = Instance.new("UIStroke")
+StatusStroke.Color = Color3.fromRGB(70, 170, 255)
+StatusStroke.Thickness = 1
+StatusStroke.Transparency = 0.5
+StatusStroke.Parent = StatusInfo
+
+-- Botão Minimizar
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 42, 0, 42)
+MinimizeBtn.Position = UDim2.new(1, -100, 0, 9)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
+MinimizeBtn.Text = "─"
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.TextSize = 22
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.Parent = Header
+Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 10)
+
+local minimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+        Size = minimized and UDim2.new(0, 1000, 0, 60) or UDim2.new(0, 1000, 0, 580)
+    }):Play()
+    MinimizeBtn.Text = minimized and "+" or "─"
+end)
+
+-- Botão Fechar
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 42, 0, 42)
+CloseBtn.Position = UDim2.new(1, -50, 0, 9)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+CloseBtn.Text = "✖"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 20
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Parent = Header
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 10)
+
+CloseBtn.MouseEnter:Connect(function()
+    TweenService:Create(CloseBtn, TweenInfo.new(0.2), {
+        BackgroundColor3 = Color3.fromRGB(255, 80, 80),
+        Size = UDim2.new(0, 44, 0, 44)
+    }):Play()
+end)
+
+CloseBtn.MouseLeave:Connect(function()
+    TweenService:Create(CloseBtn, TweenInfo.new(0.2), {
+        BackgroundColor3 = Color3.fromRGB(255, 60, 60),
+        Size = UDim2.new(0, 42, 0, 42)
+    }):Play()
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    }):Play()
+    task.wait(0.3)
+    Window:Destroy()
+end)
+
+-- Sidebar
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 210, 1, -70)
+Sidebar.Position = UDim2.new(0, 8, 0, 65)
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+Sidebar.Parent = Main
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 14)
+
+local SideStroke = Instance.new("UIStroke")
+SideStroke.Color = Color3.fromRGB(40, 40, 50)
+SideStroke.Thickness = 1.5
+SideStroke.Parent = Sidebar
+
+local SideLayout = Instance.new("UIListLayout")
+SideLayout.FillDirection = Enum.FillDirection.Vertical
+SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SideLayout.Padding = UDim.new(0, 8)
+SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SideLayout.Parent = Sidebar
+
+local SidePadding = Instance.new("UIPadding")
+SidePadding.PaddingTop = UDim.new(0, 12)
+SidePadding.Parent = Sidebar
+
+-- Área de Conteúdo
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -238, 1, -80)
+Content.Position = UDim2.new(0, 228, 0, 70)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+-- ========== FUNÇÕES DE CRIAÇÃO ==========
+local function CreateSection(parent, title, color, icon)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(0, 355, 0, 440)
+    card.BackgroundColor3 = Color3.fromRGB(18, 18, 23)
+    card.Parent = parent
+    
+    local CardCorner = Instance.new("UICorner")
+    CardCorner.CornerRadius = UDim.new(0, 14)
+    CardCorner.Parent = card
+    
+    local CardStroke = Instance.new("UIStroke")
+    CardStroke.Color = color or Color3.fromRGB(70, 200, 100)
+    CardStroke.Thickness = 2
+    CardStroke.Transparency = 0.6
+    CardStroke.Parent = card
+    
+    local SectionHeader = Instance.new("Frame")
+    SectionHeader.Size = UDim2.new(1, 0, 0, 50)
+    SectionHeader.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+    SectionHeader.Parent = card
+    Instance.new("UICorner", SectionHeader).CornerRadius = UDim.new(0, 14)
+    
+    local HeaderGrad = Instance.new("UIGradient")
+    HeaderGrad.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, color or Color3.fromRGB(70, 200, 100)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 30))
+    }
+    HeaderGrad.Transparency = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0.6),
+        NumberSequenceKeypoint.new(1, 0)
+    }
+    HeaderGrad.Parent = SectionHeader
+    
+    local IconLabel = Instance.new("TextLabel")
+    IconLabel.Size = UDim2.new(0, 40, 1, 0)
+    IconLabel.Position = UDim2.new(0, 10, 0, 0)
+    IconLabel.BackgroundTransparency = 1
+    IconLabel.Text = icon or "⚙️"
+    IconLabel.TextSize = 22
+    IconLabel.Parent = SectionHeader
+    
+    local t = Instance.new("TextLabel")
+    t.Size = UDim2.new(1, -60, 1, 0)
+    t.Position = UDim2.new(0, 50, 0, 0)
+    t.BackgroundTransparency = 1
+    t.Text = title
+    t.TextColor3 = Color3.fromRGB(255, 255, 255)
+    t.Font = Enum.Font.GothamBold
+    t.TextSize = 19
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    t.Parent = SectionHeader
+    
+    -- Scroll para muitos toggles
+    local ScrollFrame = Instance.new("ScrollingFrame")
+    ScrollFrame.Size = UDim2.new(1, 0, 1, -50)
+    ScrollFrame.Position = UDim2.new(0, 0, 0, 50)
+    ScrollFrame.BackgroundTransparency = 1
+    ScrollFrame.BorderSizePixel = 0
+    ScrollFrame.ScrollBarThickness = 4
+    ScrollFrame.Parent = card
+    
+    return ScrollFrame
+end
+
+local function createToggle(parent, text, posY, onToggled)
+    local h = 38
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, h)
+    btn.Position = UDim2.new(0, 10, 0, 10 + posY * (h + 6))
+    btn.Text = ""
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+    btn.AutoButtonColor = false
+    btn.Parent = parent
+    
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    
+    local BtnStroke = Instance.new("UIStroke")
+    BtnStroke.Color = Color3.fromRGB(45, 45, 60)
+    BtnStroke.Thickness = 1.5
+    BtnStroke.Parent = btn
+    
+    local lab = Instance.new("TextLabel")
+    lab.BackgroundTransparency = 1
+    lab.Size = UDim2.new(0.65, 0, 1, 0)
+    lab.Position = UDim2.new(0, 14, 0, 0)
+    lab.Font = Enum.Font.GothamSemibold
+    lab.Text = text
+    lab.TextColor3 = Color3.fromRGB(230, 230, 240)
+    lab.TextSize = 14
+    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.Parent = btn
+    
+    local sw = Instance.new("Frame")
+    sw.Size = UDim2.new(0, 50, 0, 26)
+    sw.Position = UDim2.new(1, -60, 0.5, -13)
+    sw.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    sw.Parent = btn
+    Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
+    
+    local SwStroke = Instance.new("UIStroke")
+    SwStroke.Color = Color3.fromRGB(70, 170, 255)
+    SwStroke.Thickness = 2
+    SwStroke.Transparency = 0.4
+    SwStroke.Parent = sw
+    
+    local ball = Instance.new("Frame")
+    ball.Size = UDim2.new(0, 20, 0, 20)
+    ball.Position = UDim2.new(0, 3, 0, 3)
+    ball.BackgroundColor3 = Color3.fromRGB(140, 140, 150)
+    ball.Parent = sw
+    Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
+    
+    local toggled = false
+    
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(32, 32, 40)
+        }):Play()
+        TweenService:Create(BtnStroke, TweenInfo.new(0.2), {
+            Thickness = 2
+        }):Play()
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+        }):Play()
+        TweenService:Create(BtnStroke, TweenInfo.new(0.2), {
+            Thickness = 1.5
+        }):Play()
+    end)
+    
+    btn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        
+        TweenService:Create(ball, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+            Position = toggled and UDim2.new(1, -23, 0, 3) or UDim2.new(0, 3, 0, 3),
+            BackgroundColor3 = toggled and Color3.fromRGB(80, 255, 140) or Color3.fromRGB(140, 140, 150)
+        }):Play()
+        
+        TweenService:Create(sw, TweenInfo.new(0.2), {
+            BackgroundColor3 = toggled and Color3.fromRGB(35, 90, 60) or Color3.fromRGB(40, 40, 50)
+        }):Play()
+        
+        TweenService:Create(SwStroke, TweenInfo.new(0.2), {
+            Color = toggled and Color3.fromRGB(80, 255, 140) or Color3.fromRGB(70, 170, 255),
+            Transparency = toggled and 0.2 or 0.4
+        }):Play()
+        
+        TweenService:Create(btn, TweenInfo.new(0.1), {
+            Size = UDim2.new(1, -18, 0, h)
+        }):Play()
+        wait(0.05)
+        TweenService:Create(btn, TweenInfo.new(0.1), {
+            Size = UDim2.new(1, -20, 0, h)
+        }):Play()
+        
+        if onToggled then 
+            onToggled(toggled) 
+        end
+    end)
+    
+    return btn
+end
+
+-- ========== CRIAÇÃO DAS ABAS ==========
+local Tabs = {"Main", "Farm", "Combat", "Teleport"}
+local TabButtons = {}
+local TabIcons = {
+    Main = "⚙️",
+    Farm = "🌾",
+    Combat = "⚔️",
+    Teleport = "🌍"
+}
+
+for i, name in ipairs(Tabs) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 46)
+    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.LayoutOrder = i
+    btn.Parent = Sidebar
+    
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 11)
+    
+    local BtnStroke = Instance.new("UIStroke")
+    BtnStroke.Color = Color3.fromRGB(40, 40, 55)
+    BtnStroke.Thickness = 1.5
+    BtnStroke.Transparency = 0.4
+    BtnStroke.Parent = btn
+    
+    local Icon = Instance.new("TextLabel")
+    Icon.Size = UDim2.new(0, 35, 1, 0)
+    Icon.Position = UDim2.new(0, 12, 0, 0)
+    Icon.BackgroundTransparency = 1
+    Icon.Text = TabIcons[name]
+    Icon.TextSize = 20
+    Icon.Parent = btn
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -55, 1, 0)
+    Label.Position = UDim2.new(0, 45, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 16
+    Label.TextColor3 = Color3.fromRGB(150, 150, 165)
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = btn
+    
+    btn.MouseEnter:Connect(function()
+        if btn.BackgroundColor3 ~= Color3.fromRGB(60, 90, 210) then
+            TweenService:Create(btn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(32, 32, 40)
+            }):Play()
+            TweenService:Create(Label, TweenInfo.new(0.2), {
+                TextColor3 = Color3.fromRGB(200, 200, 215)
+            }):Play()
+        end
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        if btn.BackgroundColor3 ~= Color3.fromRGB(60, 90, 210) then
+            TweenService:Create(btn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+            }):Play()
+            TweenService:Create(Label, TweenInfo.new(0.2), {
+                TextColor3 = Color3.fromRGB(150, 150, 165)
+            }):Play()
+        end
+    end)
+    
+    TabButtons[name] = {Button = btn, Label = Label}
+end
+
+-- ========== RENDERIZAÇÃO DAS ABAS ==========
+local function loadTab(tab)
+    for _, f in ipairs(Content:GetChildren()) do 
+        f:Destroy() 
+    end
+    
+    if tab == "Main" then
+        local s1 = CreateSection(Content, "Qualidade de Vida", Color3.fromRGB(70, 170, 255), "⚙️")
+        s1.Position = UDim2.new(0, 0, 0, 0)
+        
+        createToggle(s1, "Auto Enable Haki", 0, function(on)
+            if _G.ToggleAutoHaki then _G.ToggleAutoHaki(on) end
+        end)
+        
+        createToggle(s1, "Auto Rejoin (Ping>500)", 1, function(on)
+            if _G.ToggleAutoRejoin then _G.ToggleAutoRejoin(on) end
+        end)
+        
+        createToggle(s1, "Full Bright", 2, function(on)
+            if _G.ToggleFullBright then _G.ToggleFullBright(on) end
+        end)
+        
+        createToggle(s1, "Zoom Unlock", 3, function(on)
+            if _G.ToggleZoomUnlock then _G.ToggleZoomUnlock(on) end
+        end)
+        
+        createToggle(s1, "No Clip", 4, function(on)
+            if _G.ToggleNoClip then _G.ToggleNoClip(on) end
+        end)
+        
+        createToggle(s1, "Infinite Stamina", 5, function(on)
+            if _G.ToggleInfiniteStamina then _G.ToggleInfiniteStamina(on) end
+        end)
+        
+        createToggle(s1, "Performance Mode", 6, function(on)
+            if _G.TogglePerformanceMode then _G.TogglePerformanceMode(on) end
+        end)
+        
+        createToggle(s1, "Anti AFK", 7, function(on)
+            if _G.ToggleAntiAFK then _G.ToggleAntiAFK(on) end
+        end)
+        
+        local s2 = CreateSection(Content, "Velocidades", Color3.fromRGB(255, 120, 140), "🎮")
+        s2.Position = UDim2.new(0, 365, 0, 0)
+        
+        createToggle(s2, "WalkSpeed 100", 0, function(on) 
+            if _G.SetWalkSpeed then
+                if on then _G.SetWalkSpeed(100) else _G.SetWalkSpeed(16) end
+            end
+        end)
+        
+        createToggle(s2, "WalkSpeed 200", 1, function(on) 
+            if _G.SetWalkSpeed then
+                if on then _G.SetWalkSpeed(200) else _G.SetWalkSpeed(16) end
+            end
+        end)
+        
+        createToggle(s2, "WalkSpeed 300", 2, function(on) 
+            if _G.SetWalkSpeed then
+                if on then _G.SetWalkSpeed(300) else _G.SetWalkSpeed(16) end
+            end
+        end)
+        
+        createToggle(s2, "JumpPower 100", 3, function(on) 
+            if _G.SetJumpPower then
+                if on then _G.SetJumpPower(100) else _G.SetJumpPower(50) end
+            end
+        end)
+        
+        createToggle(s2, "JumpPower 200", 4, function(on) 
+            if _G.SetJumpPower then
+                if on then _G.SetJumpPower(200) else _G.SetJumpPower(50) end
+            end
+        end)
+        
+    elseif tab == "Farm" then
+        local s1 = CreateSection(Content, "Auto Farm", Color3.fromRGB(120, 240, 120), "🌾")
+        s1.Position = UDim2.new(0, 0, 0, 0)
+        
+        createToggle(s1, "Auto Farm Level", 0, function(on)
+            if _G.ToggleAutoFarmLevel then _G.ToggleAutoFarmLevel(on) end
+        end)
+        
+        createToggle(s1, "Auto Quest", 1, function(on)
+            if _G.ToggleAutoQuest then _G.ToggleAutoQuest(on) end
+        end)
+        
+        createToggle(s1, "Auto Farm Boss", 2, function(on)
+            if _G.ToggleAutoFarmBoss then _G.ToggleAutoFarmBoss(on) end
+        end)
+        
+        createToggle(s1, "Auto Farm Chest", 3, function(on)
+            if _G.ToggleAutoFarmChest then _G.ToggleAutoFarmChest(on) end
+        end)
+        
+        createToggle(s1, "Auto Farm Mastery", 4, function(on)
+            if _G.ToggleAutoFarmMastery then _G.ToggleAutoFarmMastery(on) end
+        end)
+        
+        createToggle(s1, "Bring Mobs (Agrupa)", 5, function(on)
+            if _G.ToggleBringMobs then _G.ToggleBringMobs(on) end
+        end)
+        
+    elseif tab == "Combat" then
+        local s1 = CreateSection(Content, "Combat Features", Color3.fromRGB(255, 100, 100), "⚔️")
+        s1.Position = UDim2.new(0, 0, 0, 0)
+        
+        createToggle(s1, "Auto Dodge (< 30% HP)", 0, function(on)
+            if _G.ToggleAutoDodge then _G.ToggleAutoDodge(on) end
+        end)
+        
+        createToggle(s1, "Player ESP", 1, function(on)
+            if _G.TogglePlayerESP then _G.TogglePlayerESP(on) end
+        end)
+        
+        createToggle(s1, "Auto Haki (Combat)", 2, function(on)
+            if _G.ToggleAutoHaki then _G.ToggleAutoHaki(on) end
+        end)
+        
+    elseif tab == "Teleport" then
+        local s1 = CreateSection(Content, "Teleport", Color3.fromRGB(100, 255, 200), "🌍")
+        s1.Position = UDim2.new(0, 0, 0, 0)
+        
+        local info = Instance.new("TextLabel")
+        info.Size = UDim2.new(1, -20, 0, 80)
+        info.Position = UDim2.new(0, 10, 0, 10)
+        info.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+        info.Text = "🌍 Recursos de Teleporte\n\nEm breve mais funcionalidades!"
+        info.Font = Enum.Font.GothamSemibold
+        info.TextSize = 14
+        info.TextColor3 = Color3.fromRGB(200, 200, 210)
+        info.TextWrapped = true
+        info.Parent = s1
+        Instance.new("UICorner", info).CornerRadius = UDim.new(0, 10)
+    end
+end
+
+-- Conectar botões das abas
+for name, data in pairs(TabButtons) do
+    data.Button.MouseButton1Click:Connect(function()
+        for _, tb in pairs(TabButtons) do
+            TweenService:Create(tb.Button, TweenInfo.new(0.25), {
+                BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+            }):Play()
+            TweenService:Create(tb.Label, TweenInfo.new(0.25), {
+                TextColor3 = Color3.fromRGB(150, 150, 165)
+            }):Play()
+        end
+        
+        TweenService:Create(data.Button, TweenInfo.new(0.25), {
+            BackgroundColor3 = Color3.fromRGB(60, 90, 210)
+        }):Play()
+        TweenService:Create(data.Label, TweenInfo.new(0.25), {
+            TextColor3 = Color3.fromRGB(255, 255, 255)
+        }):Play()
+        
+        loadTab(name)
+    end)
+end
+
+-- Footer
+local Footer = Instance.new("TextLabel")
+Footer.BackgroundTransparency = 1
+Footer.Size = UDim2.new(1, 0, 0, 30)
+Footer.Position = UDim2.new(0, 0, 1, -30)
+Footer.Font = Enum.Font.GothamBold
+Footer.TextSize = 13
+Footer.TextColor3 = Color3.fromRGB(100, 160, 255)
+Footer.Text = "🐉 DragonXT Hub v2.5 | Enhanced by Claude | by mateusschneiderdrosda"
+Footer.ZIndex = 5
+Footer.Parent = Main
+
+-- Notificação de inicialização
+spawn(function()
+    local Notification = Instance.new("Frame")
+    Notification.Size = UDim2.new(0, 350, 0, 80)
+    Notification.Position = UDim2.new(0.5, -175, 0, -100)
+    Notification.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    Notification.Parent = Window
+    Instance.new("UICorner", Notification).CornerRadius = UDim.new(0, 12)
+    
+    local NotifStroke = Instance.new("UIStroke")
+    NotifStroke.Color = Color3.fromRGB(80, 255, 140)
+    NotifStroke.Thickness = 2
+    NotifStroke.Parent = Notification
+    
+    local NotifText = Instance.new("TextLabel")
+    NotifText.Size = UDim2.new(1, -20, 1, -20)
+    NotifText.Position = UDim2.new(0, 10, 0, 10)
+    NotifText.BackgroundTransparency = 1
+    NotifText.Text = "✅ DragonXT Hub v2.5\nCarregado com sucesso!"
+    NotifText.Font = Enum.Font.GothamBold
+    NotifText.TextSize = 16
+    NotifText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NotifText.TextWrapped = true
+    NotifText.Parent = Notification
+    
+    TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
+        Position = UDim2.new(0.5, -175, 0, 20)
+    }):Play()
+    
+    wait(3)
+    
+    TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
+        Position = UDim2.new(0.5, -175, 0, -100)
+    }):Play()
+    
+    wait(0.5)
+    Notification:Destroy()
+end)
+
+-- Carregar aba inicial
+loadTab("Main")
+TabButtons["Main"].Button.BackgroundColor3 = Color3.fromRGB(60, 90, 210)
+TabButtons["Main"].Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+print("✅ GUI DragonXT Hub v2.5 carregada!")
+print("🔧 Aguardando funcionalidades do script...")
