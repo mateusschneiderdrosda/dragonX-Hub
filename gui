@@ -1,19 +1,25 @@
--- DragonXT Hub v3 — Premium GUI estilo Redz Hub
--- Coloque este LocalScript em StarterPlayerScripts ou StarterGui
+-- DragonXT Hub v5 — Premium GUI + Rotinas (Luau)
+-- LocalScript em StarterPlayerScripts ou StarterGui
 
+-- =========================
+-- Serviços
+-- =========================
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- =========================
--- Tema e estilo
+-- Tema e design system
 -- =========================
-local Colors = {
-    bg1 = Color3.fromRGB(12, 14, 20),
-    bg2 = Color3.fromRGB(18, 20, 28),
-    panel = Color3.fromRGB(24, 26, 36),
+local Theme = {
+    bgDeep = Color3.fromRGB(12, 14, 20),
+    bgPanel = Color3.fromRGB(24, 26, 36),
+    bgSurface = Color3.fromRGB(18, 20, 28),
     text = Color3.fromRGB(230, 235, 255),
     muted = Color3.fromRGB(160, 170, 190),
     purple = Color3.fromRGB(122, 62, 240),
@@ -23,14 +29,15 @@ local Colors = {
     danger = Color3.fromRGB(255, 80, 80),
 }
 
-local Corner = 16
+local Radius = { xl = 18, lg = 16, md = 12, sm = 8 }
+
 local function mk(tag, props, parent)
     local inst = Instance.new(tag)
     for k,v in pairs(props or {}) do inst[k] = v end
     if parent then inst.Parent = parent end
     return inst
 end
-local function roundify(obj, r) mk("UICorner", {CornerRadius = UDim.new(0, r or Corner)}, obj) end
+local function round(obj, r) mk("UICorner", {CornerRadius = UDim.new(0, r)}, obj) end
 local function stroke(obj, color, thickness, transparency)
     mk("UIStroke", {
         Color = color, Thickness = thickness or 1.5,
@@ -41,52 +48,59 @@ end
 local function tween(obj, info, goal) TweenService:Create(obj, info, goal):Play() end
 
 -- =========================
+-- Blur de fundo
+-- =========================
+local blur = mk("BlurEffect", {Size = 0}, Lighting)
+local function setBlur(active)
+    local target = active and 12 or 0
+    tween(blur, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = target})
+end
+
+-- =========================
 -- ScreenGui + fundo
 -- =========================
 local gui = mk("ScreenGui", {Name = "DragonXT_Hub", ResetOnSpawn = false}, player:WaitForChild("PlayerGui"))
 
-local backdrop = mk("Frame", {BackgroundColor3 = Colors.bg1, Size = UDim2.new(1,0,1,0)}, gui)
+local backdrop = mk("Frame", {BackgroundColor3 = Theme.bgDeep, Size = UDim2.new(1,0,1,0)}, gui)
 mk("UIGradient", {
     Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(8,10,16)),
         ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14,16,24)),
         ColorSequenceKeypoint.new(1, Color3.fromRGB(6,8,14)),
     }),
-    Rotation = 45
+    Rotation = 35
 }, backdrop)
 
 local particles = mk("ImageLabel", {
     BackgroundTransparency = 1,
     Image = "rbxassetid://64291961",
-    ImageColor3 = Colors.blue,
+    ImageColor3 = Theme.blue,
     ImageTransparency = 0.95,
     Size = UDim2.new(1,0,1,0),
     ZIndex = 0
 }, backdrop)
 RunService.RenderStepped:Connect(function()
-    particles.Position = UDim2.new(0, math.sin(tick()*0.18)*8, 0, math.cos(tick()*0.14)*8)
+    particles.Position = UDim2.new(0, math.sin(tick()*0.16)*10, 0, math.cos(tick()*0.12)*10)
 end)
 
 -- =========================
--- Janela principal (draggable + minimizar estável)
+-- Janela principal
 -- =========================
 local window = mk("Frame", {
-    BackgroundColor3 = Colors.panel,
-    Size = UDim2.new(0, 900, 0, 540),
-    Position = UDim2.new(0.5, -450, 0.5, -270),
+    BackgroundColor3 = Theme.bgPanel,
+    Size = UDim2.new(0, 1040, 0, 640), -- mais espaço
+    Position = UDim2.new(0.5, -520, 0.5, -320),
     BorderSizePixel = 0
 }, gui)
-roundify(window, 18)
-stroke(window, Colors.purple, 1.2, 0.5)
+round(window, Radius.xl)
+stroke(window, Theme.purple, 1.2, 0.5)
 
 -- Drag
 local dragBar = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1,0,0,64)}, window)
 local dragging, dragStart, startPos
 dragBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = window.Position
+        dragging = true; dragStart = input.Position; startPos = window.Position
     end
 end)
 dragBar.InputEnded:Connect(function(input)
@@ -99,17 +113,15 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- =========================
 -- Header
--- =========================
-local header = mk("Frame", {BackgroundColor3 = Colors.panel, Size = UDim2.new(1,0,0,64)}, window)
-roundify(header, 18)
-stroke(header, Colors.purple, 1)
+local header = mk("Frame", {BackgroundColor3 = Theme.bgPanel, Size = UDim2.new(1,0,0,64)}, window)
+round(header, Radius.xl)
+stroke(header, Theme.purple, 1)
 
 local icon = mk("ImageLabel", {
     BackgroundTransparency = 1,
     Image = "rbxassetid://10921043743",
-    ImageColor3 = Colors.gold,
+    ImageColor3 = Theme.gold,
     Size = UDim2.new(0, 40, 0, 40),
     Position = UDim2.new(0, 16, 0, 12)
 }, header)
@@ -119,9 +131,9 @@ local title = mk("TextLabel", {
     Text = "DragonXT Hub",
     Font = Enum.Font.GothamBold,
     TextSize = 22,
-    TextColor3 = Colors.text,
+    TextColor3 = Theme.text,
     Position = UDim2.new(0, 68, 0, 10),
-    Size = UDim2.new(0, 300, 0, 24),
+    Size = UDim2.new(0, 360, 0, 24),
     TextXAlignment = Enum.TextXAlignment.Left
 }, header)
 
@@ -130,36 +142,24 @@ local subtitle = mk("TextLabel", {
     Text = "Blox Fruits | Premium Edition",
     Font = Enum.Font.Gotham,
     TextSize = 14,
-    TextColor3 = Colors.muted,
+    TextColor3 = Theme.muted,
     Position = UDim2.new(0, 68, 0, 34),
-    Size = UDim2.new(0, 300, 0, 20),
+    Size = UDim2.new(0, 360, 0, 20),
     TextXAlignment = Enum.TextXAlignment.Left
 }, header)
 
 -- Botões minimizar/fechar
 local minBtn = mk("TextButton", {
-    Text = "—",
-    Font = Enum.Font.GothamBold,
-    TextSize = 16,
-    TextColor3 = Colors.text,
-    BackgroundColor3 = Colors.bg2,
-    Size = UDim2.new(0, 32, 0, 32),
-    Position = UDim2.new(1, -80, 0, 16)
+    Text = "—", Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Theme.text,
+    BackgroundColor3 = Theme.bgSurface, Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(1, -84, 0, 15)
 }, header)
-roundify(minBtn, 10)
-stroke(minBtn, Colors.blue, 1.5, 0.35)
+round(minBtn, Radius.md); stroke(minBtn, Theme.blue, 1.5, 0.35)
 
 local closeBtn = mk("TextButton", {
-    Text = "✕",
-    Font = Enum.Font.GothamBold,
-    TextSize = 16,
-    TextColor3 = Colors.text,
-    BackgroundColor3 = Colors.bg2,
-    Size = UDim2.new(0, 32, 0, 32),
-    Position = UDim2.new(1, -40, 0, 16)
+    Text = "✕", Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Theme.text,
+    BackgroundColor3 = Theme.bgSurface, Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(1, -44, 0, 15)
 }, header)
-roundify(closeBtn, 10)
-stroke(closeBtn, Colors.danger, 1.5, 0.35)
+round(closeBtn, Radius.md); stroke(closeBtn, Theme.danger, 1.5, 0.35)
 
 local minimized = false
 local function setMinimized(state)
@@ -168,80 +168,82 @@ local function setMinimized(state)
         for _, child in ipairs(window:GetChildren()) do
             if child ~= header and child ~= dragBar then child.Visible = false end
         end
-        tween(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,900,0,64)})
+        tween(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,1040,0,64)})
     else
         for _, child in ipairs(window:GetChildren()) do child.Visible = true end
-        tween(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,900,0,540)})
+        tween(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,1040,0,640)})
     end
 end
 
-minBtn.MouseEnter:Connect(function() tween(minBtn, TweenInfo.new(0.15), {BackgroundColor3 = Colors.blue}) end)
-minBtn.MouseLeave:Connect(function() tween(minBtn, TweenInfo.new(0.15), {BackgroundColor3 = Colors.bg2}) end)
+minBtn.MouseEnter:Connect(function() tween(minBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.blue}) end)
+minBtn.MouseLeave:Connect(function() tween(minBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.bgSurface}) end)
 minBtn.MouseButton1Click:Connect(function() setMinimized(not minimized) end)
 
-closeBtn.MouseEnter:Connect(function() tween(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Colors.danger}) end)
-closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Colors.bg2}) end)
+closeBtn.MouseEnter:Connect(function() tween(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.danger}) end)
+closeBtn.MouseLeave:Connect(function() tween(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.bgSurface}) end)
 closeBtn.MouseButton1Click:Connect(function()
+    setBlur(false)
     tween(window, TweenInfo.new(0.2), {BackgroundTransparency = 1})
     tween(backdrop, TweenInfo.new(0.2), {BackgroundTransparency = 1})
-    task.delay(0.22, function() gui:Destroy() end)
+    task.delay(0.22, function() gui:Destroy() blur:Destroy() end)
 end)
 
--- =========================
--- UI Scale (Small/Medium/Large)
--- =========================
+setBlur(true)
+
+-- UI Scale
 local UIScale = mk("UIScale", {Scale = 1}, window)
-local scaleOptions = {Small = 0.9, Medium = 1.0, Large = 1.1}
+local ScalePreset = {Small = 0.9, Medium = 1.0, Large = 1.12}
 
 -- =========================
 -- Sidebar
 -- =========================
 local sidebar = mk("Frame", {
-    BackgroundColor3 = Colors.panel,
-    Size = UDim2.new(0, 220, 1, -64),
+    BackgroundColor3 = Theme.bgPanel,
+    Size = UDim2.new(0, 260, 1, -64),
     Position = UDim2.new(0, 0, 0, 64),
     BorderSizePixel = 0
 }, window)
-roundify(sidebar, 18)
+round(sidebar, Radius.xl)
 mk("UIPadding", {PaddingTop = UDim.new(0, 12), PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12)}, sidebar)
-local list = mk("UIListLayout", {Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder}, sidebar)
+local list = mk("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder}, sidebar)
 
-local categories = {"Main","Farm","Combat","Fruits","Items","Teleport","Store / Shop","Settings"}
+local categories = {"Main","Farm","Quests","Boss","Chest","Combat","Fruits","Items","Teleport","Store / Shop","Settings","Utilitários"}
 local iconMap = {
     ["Main"] = "rbxassetid://10921043743",
     ["Farm"] = "rbxassetid://6034684945",
+    ["Quests"] = "rbxassetid://6034684944",
+    ["Boss"] = "rbxassetid://6034684942",
+    ["Chest"] = "rbxassetid://6034684946",
     ["Combat"] = "rbxassetid://6034684942",
     ["Fruits"] = "rbxassetid://6034684948",
     ["Items"] = "rbxassetid://6034684946",
     ["Teleport"] = "rbxassetid://6034684947",
     ["Store / Shop"] = "rbxassetid://6034684944",
     ["Settings"] = "rbxassetid://6034684943",
+    ["Utilitários"] = "rbxassetid://6034684943",
 }
 local activeCategory = "Main"
 local buttons = {}
 
 -- =========================
--- Área de conteúdo
+-- Área principal (mais espaçosa)
 -- =========================
 local content = mk("Frame", {
     BackgroundTransparency = 1,
-    Size = UDim2.new(1, -240, 1, -84),
-    Position = UDim2.new(0, 230, 0, 74)
+    Size = UDim2.new(1, -280, 1, -84),
+    Position = UDim2.new(0, 270, 0, 74)
 }, window)
 
 local function createPanel(name)
     local panel = mk("Frame", {
-        Name = name,
-        BackgroundColor3 = Colors.panel,
-        Size = UDim2.new(1, 0, 1, 0),
-        Visible = false,
-        BorderSizePixel = 0
+        Name = name, BackgroundColor3 = Theme.bgPanel,
+        Size = UDim2.new(1, 0, 1, 0), Visible = false, BorderSizePixel = 0
     }, content)
-    roundify(panel, 18)
-    mk("UIPadding", {PaddingTop = UDim.new(0, 16), PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16), PaddingBottom = UDim.new(0, 16)}, panel)
-    local grid = mk("UIGridLayout", {
-        CellSize = UDim2.new(0, 280, 0, 160),
-        CellPadding = UDim2.new(0, 12, 0, 12),
+    round(panel, Radius.xl)
+    mk("UIPadding", {PaddingTop = UDim.new(0, 18), PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18), PaddingBottom = UDim.new(0, 18)}, panel)
+    mk("UIGridLayout", {
+        CellSize = UDim2.new(0, 320, 0, 190), -- cards maiores
+        CellPadding = UDim2.new(0, 16, 0, 16),
         FillDirection = Enum.FillDirection.Horizontal,
         SortOrder = Enum.SortOrder.LayoutOrder
     }, panel)
@@ -253,55 +255,75 @@ for _, cat in ipairs(categories) do panels[cat] = createPanel(cat) end
 panels["Main"].Visible = true
 
 -- =========================
--- Componentes (Card, Toggle, Slider, Botão)
+-- Componentes
 -- =========================
-local function createCard(parent, titleText, subtitleText)
-    local card = mk("Frame", {BackgroundColor3 = Colors.bg2, BorderSizePixel = 0}, parent)
-    roundify(card, 14)
-    stroke(card, Colors.emerald, 1.2, 0.45)
-    mk("UIPadding", {PaddingTop = UDim.new(0, 12), PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12)}, card)
+local function createCard(parent, headerText, subText)
+    local card = mk("Frame", {BackgroundColor3 = Theme.bgSurface, BorderSizePixel = 0}, parent)
+    round(card, Radius.lg); stroke(card, Theme.emerald, 1.2, 0.45)
+    mk("UIPadding", {PaddingTop = UDim.new(0, 14), PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14), PaddingBottom = UDim.new(0, 14)}, card)
 
-    local title = mk("TextLabel", {
-        BackgroundTransparency = 1, Text = titleText,
-        Font = Enum.Font.GothamBold, TextSize = 18, TextColor3 = Colors.text,
-        Size = UDim2.new(1, -24, 0, 24), Position = UDim2.new(0, 0, 0, 0),
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, card)
-    local subtitle = mk("TextLabel", {
-        BackgroundTransparency = 1, Text = subtitleText or "",
-        Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Colors.muted,
-        Size = UDim2.new(1, -24, 0, 20), Position = UDim2.new(0, 0, 0, 26),
-        TextXAlignment = Enum.TextXAlignment.Left
+    local headerBar = mk("Frame", {BackgroundColor3 = Theme.bgPanel, Size = UDim2.new(1, -8, 0, 38), Position = UDim2.new(0, 0, 0, 0)}, card)
+    round(headerBar, Radius.md); stroke(headerBar, Theme.purple, 1, 0.4)
+    mk("UIPadding", {PaddingLeft = UDim.new(0, 8)}, headerBar)
+    mk("TextLabel", {
+        BackgroundTransparency = 1, Text = headerText,
+        Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Theme.text,
+        Size = UDim2.new(1, -12, 1, 0), TextXAlignment = Enum.TextXAlignment.Left
+    }, headerBar)
+
+    mk("TextLabel", {
+        BackgroundTransparency = 1, Text = subText or "",
+        Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Theme.muted,
+        Size = UDim2.new(1, -24, 0, 20), Position = UDim2.new(0, 0, 0, 46), TextXAlignment = Enum.TextXAlignment.Left
     }, card)
 
-    -- Hover suave
-    card.MouseEnter:Connect(function()
-        tween(card, TweenInfo.new(0.15), {BackgroundColor3 = Colors.bg2:Lerp(Colors.purple, 0.08)})
-    end)
-    card.MouseLeave:Connect(function()
-        tween(card, TweenInfo.new(0.15), {BackgroundColor3 = Colors.bg2})
-    end)
+    card.MouseEnter:Connect(function() tween(card, TweenInfo.new(0.15), {BackgroundColor3 = Theme.bgSurface:Lerp(Theme.purple, 0.08)}) end)
+    card.MouseLeave:Connect(function() tween(card, TweenInfo.new(0.15), {BackgroundColor3 = Theme.bgSurface}) end)
 
     return card
 end
 
+local function createButton(parent, text, accentColor, callback)
+    local btn = mk("TextButton", {
+        Text = text, Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Theme.text,
+        BackgroundColor3 = Theme.bgSurface, Size = UDim2.new(0, 240, 0, 38)
+    }, parent)
+    round(btn, Radius.md); stroke(btn, accentColor, 2, 0.35)
+    btn.MouseEnter:Connect(function()
+        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = accentColor})
+        btn.TextColor3 = Color3.fromRGB(10,10,10)
+    end)
+    btn.MouseLeave:Connect(function()
+        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.bgSurface})
+        btn.TextColor3 = Theme.text
+    end)
+    btn.MouseButton1Click:Connect(function()
+        tween(btn, TweenInfo.new(0.08), {Size = UDim2.new(0, 232, 0, 36)})
+        task.delay(0.09, function() tween(btn, TweenInfo.new(0.08), {Size = UDim2.new(0, 240, 0, 38)}) end)
+        if callback then callback() end
+    end)
+    return btn
+end
+
 local function createToggle(parent, labelText, default)
-    local holder = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 36), Position = UDim2.new(0, 0, 0, 54)}, parent)
+    local holder = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 38), Position = UDim2.new(0, 0, 0, 74)}, parent)
     local label = mk("TextLabel", {
         BackgroundTransparency = 1, Text = labelText,
-        Font = Enum.Font.Gotham, TextSize = 16, TextColor3 = Colors.text,
-        Size = UDim2.new(1, -60, 1, 0), TextXAlignment = Enum.TextXAlignment.Left
+        Font = Enum.Font.Gotham, TextSize = 16, TextColor3 = Theme.text,
+        Size = UDim2.new(1, -80, 1, 0), TextXAlignment = Enum.TextXAlignment.Left
     }, holder)
 
-    local toggle = mk("Frame", {BackgroundColor3 = Colors.bg2, Size = UDim2.new(0, 56, 0, 28), Position = UDim2.new(1, -60, 0.5, -14)}, holder)
-    roundify(toggle, 14); stroke(toggle, Colors.blue, 1.2, 0.35)
-    local knob = mk("Frame", {BackgroundColor3 = Colors.gold, Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 2, 0, 2)}, toggle)
-    roundify(knob, 12); stroke(knob, Colors.gold, 1, 0.2)
+    local toggle = mk("Frame", {BackgroundColor3 = Theme.bgSurface, Size = UDim2.new(0, 64, 0, 28), Position = UDim2.new(1, -64, 0.5, -14)}, holder)
+    round(toggle, Radius.md); stroke(toggle, Theme.blue, 1.2, 0.35)
+    mk("UIGradient", {Color = ColorSequence.new(Theme.bgSurface, Theme.emerald), Transparency = NumberSequence.new(0.6)}, toggle)
+
+    local knob = mk("Frame", {BackgroundColor3 = Theme.gold, Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 2, 0, 2)}, toggle)
+    round(knob, Radius.sm); stroke(knob, Theme.gold, 1, 0.2)
 
     local state = default or false
     local function apply(animated)
-        local goalPos = state and UDim2.new(0, 30, 0, 2) or UDim2.new(0, 2, 0, 2)
-        local goalColor = state and Colors.emerald or Colors.bg2
+        local goalPos = state and UDim2.new(0, 38, 0, 2) or UDim2.new(0, 2, 0, 2)
+        local goalColor = state and Theme.emerald or Theme.bgSurface
         if animated then
             tween(knob, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = goalPos})
             tween(toggle, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = goalColor})
@@ -312,31 +334,32 @@ local function createToggle(parent, labelText, default)
     apply(false)
 
     toggle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            state = not state; apply(true)
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then state = not state; apply(true) end
     end)
 
     return {Holder = holder, Toggle = toggle, Get = function() return state end, Set = function(v) state = v; apply(true) end}
 end
 
 local function createSlider(parent, labelText, min, max, default, onChanged)
-    local holder = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 60), Position = UDim2.new(0, 0, 0, 96)}, parent)
+    local holder = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 76), Position = UDim2.new(0, 0, 0, 120)}, parent)
     local label = mk("TextLabel", {
         BackgroundTransparency = 1, Text = labelText,
-        Font = Enum.Font.Gotham, TextSize = 16, TextColor3 = Colors.text,
+        Font = Enum.Font.Gotham, TextSize = 16, TextColor3 = Theme.text,
         Size = UDim2.new(1, 0, 0, 20), TextXAlignment = Enum.TextXAlignment.Left
     }, holder)
 
-    local bar = mk("Frame", {BackgroundColor3 = Colors.bg2, Size = UDim2.new(1, -10, 0, 8), Position = UDim2.new(0, 0, 0, 28)}, holder)
-    roundify(bar, 4); stroke(bar, Colors.purple, 1, 0.35)
-    local fill = mk("Frame", {BackgroundColor3 = Colors.purple, Size = UDim2.new(0, 0, 1, 0)}, bar); roundify(fill, 4)
-    local knob = mk("Frame", {BackgroundColor3 = Colors.gold, Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, 0, 0.5, -8)}, bar)
-    roundify(knob, 8); stroke(knob, Colors.gold, 1, 0.2)
+    local bar = mk("Frame", {BackgroundColor3 = Theme.bgSurface, Size = UDim2.new(1, -10, 0, 10), Position = UDim2.new(0, 0, 0, 32)}, holder)
+    round(bar, Radius.sm); stroke(bar, Theme.purple, 1, 0.35)
+    mk("UIGradient", {Color = ColorSequence.new(Theme.purple, Theme.blue), Transparency = NumberSequence.new(0.2)}, bar)
+
+    local fill = mk("Frame", {BackgroundColor3 = Theme.purple, Size = UDim2.new(0, 0, 1, 0)}, bar); round(fill, Radius.sm)
+    local knob = mk("Frame", {BackgroundColor3 = Theme.gold, Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(0, 0, 0.5, -9)}, bar)
+    round(knob, Radius.sm); stroke(knob, Theme.gold, 1, 0.2)
+
     local valueLabel = mk("TextLabel", {
         BackgroundTransparency = 1, Text = tostring(default or min),
-        Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Colors.muted,
-        Size = UDim2.new(0, 60, 0, 20), Position = UDim2.new(1, -60, 0, 0), TextXAlignment = Enum.TextXAlignment.Right
+        Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Theme.text,
+        Size = UDim2.new(0, 70, 0, 20), Position = UDim2.new(1, -70, 0, 0), TextXAlignment = Enum.TextXAlignment.Right
     }, holder)
 
     local value = math.clamp(default or min, min, max)
@@ -344,7 +367,7 @@ local function createSlider(parent, labelText, min, max, default, onChanged)
         local pct = (value - min) / (max - min)
         valueLabel.Text = tostring(math.floor(value))
         local goalFill = UDim2.new(pct, 0, 1, 0)
-        local goalKnob = UDim2.new(pct, -8, 0.5, -8)
+        local goalKnob = UDim2.new(pct, -9, 0.5, -9)
         if animated then
             tween(fill, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goalFill})
             tween(knob, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = goalKnob})
@@ -368,26 +391,123 @@ local function createSlider(parent, labelText, min, max, default, onChanged)
     return {Holder = holder, Get = function() return value end, Set = function(v) value = math.clamp(v, min, max); visuals(true); if onChanged then onChanged(value) end end}
 end
 
-local function createButton(parent, text, accentColor, callback)
-    local btn = mk("TextButton", {
-        Text = text, Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = Colors.text,
-        BackgroundColor3 = Colors.bg2, Size = UDim2.new(0, 220, 0, 36)
-    }, parent)
-    roundify(btn, 10); stroke(btn, accentColor, 2, 0.35)
-    btn.MouseEnter:Connect(function()
-        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = accentColor})
-        btn.TextColor3 = Color3.fromRGB(10,10,10)
+-- =========================
+-- Rotinas (placeholders organizados)
+-- =========================
+local State = {
+    AutoFarm = false,
+    AutoQuest = false,
+    AutoBoss = false,
+    AutoChest = false,
+    AimAssist = false,
+    AutoSkill = false,
+    ESP = false,
+    Fly = false,
+    NoClip = false,
+    AntiAFK = true,
+    AutoHaki = false,
+    AutoDash = false,
+    SkillSpam = false,
+    FarmDistance = 60,
+    WalkSpeed = 24,
+    JumpPower = 75,
+}
+
+-- Utilidades
+local function getHumanoid()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:FindFirstChildOfClass("Humanoid")
+end
+local function tpTo(pos)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if root then root.CFrame = CFrame.new(pos) end
+end
+
+-- Anti-AFK simples
+do
+    local vu = game:GetService("VirtualUser")
+    player.Idled:Connect(function()
+        if State.AntiAFK then
+            vu:Button2Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            vu:Button2Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+        end
     end)
-    btn.MouseLeave:Connect(function()
-        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Colors.bg2})
-        btn.TextColor3 = Colors.text
-    end)
-    btn.MouseButton1Click:Connect(function()
-        tween(btn, TweenInfo.new(0.08), {Size = UDim2.new(0, 214, 0, 34)})
-        task.delay(0.09, function() tween(btn, TweenInfo.new(0.08), {Size = UDim2.new(0, 220, 0, 36)}) end)
-        if callback then callback() end
-    end)
-    return btn
+end
+
+-- Loops controlados
+local function loopAutoFarm()
+    while State.AutoFarm do
+        -- Exemplo: mover para alvo mais próximo (placeholder)
+        -- tpTo(Vector3.new(0, 20, 0))
+        task.wait(0.5)
+    end
+end
+
+local function loopAutoQuest()
+    while State.AutoQuest do
+        -- Exemplo: aceitar/entregar quests (placeholder)
+        task.wait(1.0)
+    end
+end
+
+local function loopAutoBoss()
+    while State.AutoBoss do
+        -- Exemplo: localizar boss e atacar (placeholder)
+        task.wait(1.0)
+    end
+end
+
+local function loopAutoChest()
+    while State.AutoChest do
+        -- Exemplo: localizar chests e tween até eles (placeholder)
+        task.wait(0.8)
+    end
+end
+
+local function loopAimAssist()
+    while State.AimAssist do
+        -- Exemplo: ajustar mira para alvo (placeholder)
+        task.wait(0.05)
+    end
+end
+
+local function loopAutoSkill()
+    while State.AutoSkill do
+        -- Exemplo: disparar habilidades (placeholder)
+        task.wait(0.4)
+    end
+end
+
+local function loopESP()
+    while State.ESP do
+        -- Exemplo: destacar inimigos/frutas/baús (placeholder)
+        task.wait(0.5)
+    end
+end
+
+local function loopFly()
+    local hum = getHumanoid()
+    while State.Fly do
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Physics) end
+        -- Exemplo: aplicar movimento (placeholder)
+        task.wait(0.05)
+    end
+end
+
+local function loopNoClip()
+    local char = player.Character or player.CharacterAdded:Wait()
+    while State.NoClip do
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+        task.wait(0.05)
+    end
+    -- restore
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then part.CanCollide = true end
+    end
 end
 
 -- =========================
@@ -399,20 +519,29 @@ do
     local panel = panels["Main"]; panel.Visible = true
     local card = createCard(panel, "Status & Controle", "Funções principais do hub")
     local tAutoFarm = createToggle(card, "Auto Farm", false)
-    local tAutoQuest = createToggle(card, "Auto Quest", false); tAutoQuest.Holder.Position = UDim2.new(0,0,0,96)
+    local tAutoQuest = createToggle(card, "Auto Quest", false); tAutoQuest.Holder.Position = UDim2.new(0,0,0,120)
 
-    local wsSlider = createSlider(card, "WalkSpeed", 16, 120, 24, function(v)
-        -- Exemplo: if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then player.Character.Humanoid.WalkSpeed = v end
-    end); wsSlider.Holder.Position = UDim2.new(0,0,0,160)
+    local wsSlider = createSlider(card, "WalkSpeed", 16, 120, State.WalkSpeed, function(v)
+        State.WalkSpeed = v
+        local hum = getHumanoid(); if hum then hum.WalkSpeed = v end
+    end)
+    wsSlider.Holder.Position = UDim2.new(0,0,0,168)
 
-    local jpSlider = createSlider(card, "JumpPower", 50, 200, 75, function(v)
-        -- Exemplo: if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then player.Character.Humanoid.JumpPower = v end
-    end); jpSlider.Holder.Position = UDim2.new(0,0,0,224)
+    local jpSlider = createSlider(card, "JumpPower", 50, 200, State.JumpPower, function(v)
+        State.JumpPower = v
+        local hum = getHumanoid(); if hum then hum.JumpPower = v end
+    end)
+    jpSlider.Holder.Position = UDim2.new(0,0,0,246)
 
-    local btnFarm = createButton(card, "Iniciar Auto Farm", Colors.emerald, function() tAutoFarm.Set(true) end)
-    btnFarm.Position = UDim2.new(0, 0, 0, 100)
-    local btnQuest = createButton(card, "Iniciar Auto Quest", Colors.blue, function() tAutoQuest.Set(true) end)
-    btnQuest.Position = UDim2.new(0, 0, 0, 140)
+    local btnFarm = createButton(card, "Iniciar Auto Farm", Theme.emerald, function()
+        State.AutoFarm = true; tAutoFarm.Set(true); task.spawn(loopAutoFarm)
+    end)
+    btnFarm.Position = UDim2.new(0, 0, 0, 96)
+
+    local btnQuest = createButton(card, "Iniciar Auto Quest", Theme.blue, function()
+        State.AutoQuest = true; tAutoQuest.Set(true); task.spawn(loopAutoQuest)
+    end)
+    btnQuest.Position = UDim2.new(0, 0, 0, 138)
 end
 
 -- Farm
@@ -420,13 +549,53 @@ do
     local panel = panels["Farm"]
     local card = createCard(panel, "Farm Avançado", "Configurações detalhadas")
     local tAutoBoss = createToggle(card, "Auto Boss", false)
-    local tAutoChest = createToggle(card, "Auto Chest", false); tAutoChest.Holder.Position = UDim2.new(0,0,0,96)
+    local tAutoChest = createToggle(card, "Auto Chest", false); tAutoChest.Holder.Position = UDim2.new(0,0,0,120)
 
-    local distSlider = createSlider(card, "Distância de Farm", 10, 200, 60, function(v) end)
-    distSlider.Holder.Position = UDim2.new(0,0,0,160)
+    local distSlider = createSlider(card, "Distância de Farm", 10, 250, State.FarmDistance, function(v) State.FarmDistance = v end)
+    distSlider.Holder.Position = UDim2.new(0,0,0,168)
 
-    local btnStart = createButton(card, "Executar Rotina de Farm", Colors.purple, function() end)
-    btnStart.Position = UDim2.new(0, 0, 0, 100)
+    local btnStartBoss = createButton(card, "Iniciar Auto Boss", Theme.purple, function()
+        State.AutoBoss = true; tAutoBoss.Set(true); task.spawn(loopAutoBoss)
+    end)
+    btnStartBoss.Position = UDim2.new(0, 0, 0, 96)
+
+    local btnStartChest = createButton(card, "Iniciar Auto Chest", Theme.gold, function()
+        State.AutoChest = true; tAutoChest.Set(true); task.spawn(loopAutoChest)
+    end)
+    btnStartChest.Position = UDim2.new(0, 0, 0, 138)
+end
+
+-- Quests
+do
+    local panel = panels["Quests"]
+    local card = createCard(panel, "Quests & Rotas", "Automação de missões")
+    local tAutoQuest = createToggle(card, "Auto Quest", State.AutoQuest)
+    local btnStart = createButton(card, "Executar Rotina de Quests", Theme.emerald, function()
+        State.AutoQuest = true; tAutoQuest.Set(true); task.spawn(loopAutoQuest)
+    end)
+    btnStart.Position = UDim2.new(0, 0, 0, 96)
+end
+
+-- Boss
+do
+    local panel = panels["Boss"]
+    local card = createCard(panel, "Chefes", "Localização e combate")
+    local tAutoBoss = createToggle(card, "Auto Boss", State.AutoBoss)
+    local btnStart = createButton(card, "Caçar Chefes", Theme.purple, function()
+        State.AutoBoss = true; tAutoBoss.Set(true); task.spawn(loopAutoBoss)
+    end)
+    btnStart.Position = UDim2.new(0, 0, 0, 96)
+end
+
+-- Chest
+do
+    local panel = panels["Chest"]
+    local card = createCard(panel, "Baús", "Coleta automática")
+    local tAutoChest = createToggle(card, "Auto Chest (Tween)", State.AutoChest)
+    local btnStart = createButton(card, "Coletar Baús", Theme.gold, function()
+        State.AutoChest = true; tAutoChest.Set(true); task.spawn(loopAutoChest)
+    end)
+    btnStart.Position = UDim2.new(0, 0, 0, 96)
 end
 
 -- Combat
@@ -434,19 +603,28 @@ do
     local panel = panels["Combat"]
     local card = createCard(panel, "Combate", "Assistentes e boosts")
     local tAimAssist = createToggle(card, "Aim Assist", false)
-    local tAutoSkill = createToggle(card, "Auto Skill", false); tAutoSkill.Holder.Position = UDim2.new(0,0,0,96)
-    local btnBurst = createButton(card, "Burst Combo", Colors.gold, function() end)
-    btnBurst.Position = UDim2.new(0, 0, 0, 100)
+    local tAutoSkill = createToggle(card, "Auto Skill", false); tAutoSkill.Holder.Position = UDim2.new(0,0,0,120)
+
+    local btnAim = createButton(card, "Ativar Aim Assist", Theme.blue, function()
+        State.AimAssist = true; tAimAssist.Set(true); task.spawn(loopAimAssist)
+    end)
+    btnAim.Position = UDim2.new(0, 0, 0, 96)
+
+    local btnSkill = createButton(card, "Ativar Auto Skill", Theme.emerald, function()
+        State.AutoSkill = true; tAutoSkill.Set(true); task.spawn(loopAutoSkill)
+    end)
+    btnSkill.Position = UDim2.new(0, 0, 0, 138)
 end
 
 -- Fruits
 do
     local panel = panels["Fruits"]
     local card = createCard(panel, "Frutas Místicas", "Gerenciamento e alertas")
-    local tAutoBuyFruit = createToggle(card, "Auto Buy Fruit", false)
-    local tFruitNotifier = createToggle(card, "Fruit Notifier", true); tFruitNotifier.Holder.Position = UDim2.new(0,0,0,96)
-    local btnTrack = createButton(card, "Rastrear Frutas", Colors.emerald, function() end)
-    btnTrack.Position = UDim2.new(0, 0, 0, 100)
+    local tFruitNotifier = createToggle(card, "Fruit Notifier", true)
+    local btnTrack = createButton(card, "Rastrear Frutas", Theme.emerald, function()
+        -- Placeholder: lógica de rastreio
+    end)
+    btnTrack.Position = UDim2.new(0, 0, 0, 96)
 end
 
 -- Items
@@ -454,28 +632,30 @@ do
     local panel = panels["Items"]
     local card = createCard(panel, "Itens & Loot", "Coleta e organização")
     local tAutoCollect = createToggle(card, "Auto Collect", true)
-    local btnSort = createButton(card, "Organizar Inventário", Colors.blue, function() end)
-    btnSort.Position = UDim2.new(0, 0, 0, 100)
+    local btnSort = createButton(card, "Organizar Inventário", Theme.blue, function()
+        -- Placeholder: lógica de organização
+    end)
+    btnSort.Position = UDim2.new(0, 0, 0, 96)
 end
 
 -- Teleport
 do
     local panel = panels["Teleport"]
     local card = createCard(panel, "Teleport", "Locais rápidos")
-    local btnIsland1 = createButton(card, "Teleport: Starter Island", Colors.purple, function() end)
+    local btnIsland1 = createButton(card, "Teleport: Starter Island", Theme.purple, function() tpTo(Vector3.new(0, 20, 0)) end)
     btnIsland1.Position = UDim2.new(0, 0, 0, 60)
-    local btnIsland2 = createButton(card, "Teleport: Second Sea", Colors.emerald, function() end)
-    btnIsland2.Position = UDim2.new(0, 0, 0, 100)
+    local btnIsland2 = createButton(card, "Teleport: Second Sea", Theme.emerald, function() tpTo(Vector3.new(1000, 20, 1000)) end)
+    btnIsland2.Position = UDim2.new(0, 0, 0, 102)
 end
 
 -- Store / Shop
 do
     local panel = panels["Store / Shop"]
     local card = createCard(panel, "Loja Premium", "Boosts e utilitários")
-    local btnBuyBoost = createButton(card, "Comprar Boost XP", Colors.gold, function() end)
+    local btnBuyBoost = createButton(card, "Comprar Boost XP", Theme.gold, function() end)
     btnBuyBoost.Position = UDim2.new(0, 0, 0, 60)
-    local btnBuyChip = createButton(card, "Comprar Raid Chip", Colors.blue, function() end)
-    btnBuyChip.Position = UDim2.new(0, 0, 0, 100)
+    local btnBuyChip = createButton(card, "Comprar Raid Chip", Theme.blue, function() end)
+    btnBuyChip.Position = UDim2.new(0, 0, 0, 102)
 end
 
 -- Settings
@@ -483,23 +663,21 @@ do
     local panel = panels["Settings"]
     local card = createCard(panel, "Configurações", "Preferências do usuário")
     local tParticles = createToggle(card, "Partículas Místicas", true)
-    local tGlow = createToggle(card, "Glow em Botões", true); tGlow.Holder.Position = UDim2.new(0,0,0,96)
+    local tGlow = createToggle(card, "Glow em Botões", true); tGlow.Holder.Position = UDim2.new(0,0,0,120)
 
-    local btnResetUI = createButton(card, "Resetar Layout", Colors.danger, function()
+    local btnResetUI = createButton(card, "Resetar Layout", Theme.danger, function()
         UIScale.Scale = 1; setMinimized(false)
     end)
-    btnResetUI.Position = UDim2.new(0, 0, 0, 100)
+    btnResetUI.Position = UDim2.new(0, 0, 0, 96)
 
-    -- UI Scale selector
     local scaleCard = createCard(panel, "UI Scale", "Small / Medium / Large")
-    local btnSmall = createButton(scaleCard, "Small", Colors.blue, function() UIScale.Scale = scaleOptions.Small end)
+    local btnSmall = createButton(scaleCard, "Small", Theme.blue, function() UIScale.Scale = 0.9 end)
     btnSmall.Position = UDim2.new(0, 0, 0, 60)
-    local btnMedium = createButton(scaleCard, "Medium", Colors.emerald, function() UIScale.Scale = scaleOptions.Medium end)
-    btnMedium.Position = UDim2.new(0, 0, 0, 100)
-    local btnLarge = createButton(scaleCard, "Large", Colors.purple, function() UIScale.Scale = scaleOptions.Large end)
-    btnLarge.Position = UDim2.new(0, 0, 0, 140)
+    local btnMedium = createButton(scaleCard, "Medium", Theme.emerald, function() UIScale.Scale = 1.0 end)
+    btnMedium.Position = UDim2.new(0, 0, 0, 102)
+    local btnLarge = createButton(scaleCard, "Large", Theme.purple, function() UIScale.Scale = 1.12 end)
+    btnLarge.Position = UDim2.new(0, 0, 0, 144)
 
-    -- Partículas on/off
     local function applyParticles() particles.Visible = tParticles.Get() end
     applyParticles()
     tParticles.Toggle.InputBegan:Connect(function(input)
@@ -507,23 +685,49 @@ do
     end)
 end
 
+-- Utilitários (ESP/Fly/NoClip/Anti-AFK/Haki/Dash/Spam)
+do
+    local panel = panels["Utilitários"]
+    local card = createCard(panel, "Utilitários", "Scripts visuais e de movimento")
+    local tESP = createToggle(card, "ESP (Inimigos/Frutas/Chests)", false)
+    local tFly = createToggle(card, "Fly", false); tFly.Holder.Position = UDim2.new(0,0,0,120)
+    local tNoClip = createToggle(card, "NoClip", false); tNoClip.Holder.Position = UDim2.new(0,0,0,168)
+    local tAntiAFK = createToggle(card, "Anti-AFK", true); tAntiAFK.Holder.Position = UDim2.new(0,0,0,216)
+    local tAutoHaki = createToggle(card, "Auto Haki", false); tAutoHaki.Holder.Position = UDim2.new(0,0,0,264)
+    local tAutoDash = createToggle(card, "Auto Dash", false); tAutoDash.Holder.Position = UDim2.new(0,0,0,312)
+    local tSkillSpam = createToggle(card, "Auto Skill Spam", false); tSkillSpam.Holder.Position = UDim2.new(0,0,0,360)
+
+    local btnApply = createButton(card, "Aplicar Utilitários", Theme.emerald, function()
+        State.ESP = tESP.Get(); if State.ESP then task.spawn(loopESP) end
+        State.Fly = tFly.Get(); if State.Fly then task.spawn(loopFly) end
+        State.NoClip = tNoClip.Get(); if State.NoClip then task.spawn(loopNoClip) end
+        State.AntiAFK = tAntiAFK.Get()
+        State.AutoHaki = tAutoHaki.Get()
+        State.AutoDash = tAutoDash.Get()
+        State.SkillSpam = tSkillSpam.Get()
+    end)
+    btnApply.Position = UDim2.new(0, 0, 0, 96)
+end
+
 -- =========================
--- Sidebar buttons + troca de categoria
+-- Sidebar: botões com linha lateral + glow
 -- =========================
 local function setActiveCategory(cat)
     activeCategory = cat
     for name, btn in pairs(buttons) do
         local active = (name == cat)
-        tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = active and Colors.purple or Colors.bg2})
-        btn.Icon.ImageColor3 = active and Colors.gold or Colors.muted
-        btn.Label.TextColor3 = active and Colors.text or Colors.muted
+        local line = btn:FindFirstChild("ActiveLine")
+        tween(btn, TweenInfo.new(0.2), {BackgroundColor3 = active and Theme.purple or Theme.bgSurface})
+        btn.Icon.ImageColor3 = active and Theme.gold or Theme.muted
+        btn.Label.TextColor3 = active and Theme.text or Theme.muted
+        if line then line.Visible = active end
     end
     for _, panel in ipairs(content:GetChildren()) do
         if panel:IsA("Frame") then
             local show = (panel.Name == cat)
             if show then
                 panel.Visible = true; panel.BackgroundTransparency = 1
-                tween(panel, TweenInfo.new(0.2), {BackgroundTransparency = 0})
+                tween(panel, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0})
             else
                 panel.Visible = false
             end
@@ -532,27 +736,30 @@ local function setActiveCategory(cat)
 end
 
 for _, cat in ipairs(categories) do
-    local btn = mk("Frame", {Name = cat, BackgroundColor3 = Colors.bg2, Size = UDim2.new(1, -24, 0, 44)}, sidebar)
-    roundify(btn, 12); stroke(btn, Colors.purple, 1, 0.45)
+    local btn = mk("Frame", {Name = cat, BackgroundColor3 = Theme.bgSurface, Size = UDim2.new(1, -24, 0, 48)}, sidebar)
+    round(btn, Radius.md); stroke(btn, Theme.purple, 1, 0.45)
+
+    local activeLine = mk("Frame", {Name = "ActiveLine", BackgroundColor3 = Theme.emerald, Size = UDim2.new(0, 3, 1, 0), Position = UDim2.new(0, -3, 0, 0), Visible = false}, btn)
+    round(activeLine, Radius.sm)
 
     local icon = mk("ImageLabel", {
         Name = "Icon", BackgroundTransparency = 1, Image = iconMap[cat] or iconMap["Main"],
-        ImageColor3 = Colors.muted, Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 10, 0, 10)
+        ImageColor3 = Theme.muted, Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 10, 0, 12)
     }, btn)
     local label = mk("TextLabel", {
         Name = "Label", BackgroundTransparency = 1, Text = cat,
-        Font = Enum.Font.Gotham, TextSize = 16, TextColor3 = Colors.muted,
-        Position = UDim2.new(0, 44, 0, 10), Size = UDim2.new(1, -54, 0, 24), TextXAlignment = Enum.TextXAlignment.Left
+        Font = Enum.Font.Gotham, TextSize = 16, TextColor3 = Theme.muted,
+        Position = UDim2.new(0, 44, 0, 12), Size = UDim2.new(1, -54, 0, 24), TextXAlignment = Enum.TextXAlignment.Left
     }, btn)
     btn.Icon = icon; btn.Label = label
 
     btn.MouseEnter:Connect(function()
-        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Colors.bg2:Lerp(Colors.blue, 0.15)})
+        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.bgSurface:Lerp(Theme.blue, 0.15)})
         tween(icon, TweenInfo.new(0.15), {Size = UDim2.new(0, 26, 0, 26)})
     end)
     btn.MouseLeave:Connect(function()
         local active = (activeCategory == cat)
-        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = active and Colors.purple or Colors.bg2})
+        tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = active and Theme.purple or Theme.bgSurface})
         tween(icon, TweenInfo.new(0.15), {Size = UDim2.new(0, 24, 0, 24)})
     end)
     btn.InputBegan:Connect(function(input)
